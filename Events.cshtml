@@ -1,0 +1,210 @@
+﻿<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+<link href="@Url.Content("~/Content/Site.css")" rel="stylesheet" type="text/css" />
+@using Web.Models
+@model List<Web.Models.Event>
+
+@{
+    ViewBag.Title = "Events";
+}
+
+<h2>Admin Console</h2>
+<h3>Active Events</h3>
+<div class="btn-group col-md-offset-9">
+    <button type="button" class="btn btn-default" id="newbtn" data-toggle="modal" data-target="#editevent">New</button>
+    <button type="button" class="btn btn-default" id="editbtn" data-toggle="modal" data-target="#editevent" disabled>Edit</button>
+    <button type="button" class="btn btn-default" id="deletebtn" disabled>Delete</button>
+    <button type="button" class="btn btn-default" id="closebtn" disabled>Close</button>
+</div>
+<hr />
+<table class="table table-hover" id="event-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+{
+    <tr id="@item.Id">
+        <td>@Html.DisplayFor(modelItem => item.Id)</td>
+        <td>@Html.DisplayFor(modelItem => item.Name)</td>
+        <td>@Html.DisplayFor(modelItem => item.Description)</td>
+        <td>@Html.DisplayFor(modelItem => item.Date)</td>
+    </tr>
+}
+    </tbody>
+</table>
+
+<div id="editevent" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="editheader">Create Event</h4>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" id="eventform">
+                    <div class="form-group">
+                        <label class="control-label col-md-4" for="Name">Event Name</label>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="editname" name="Name" placeholder="Event Name" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-md-4" for="Date">Event Date</label>
+                        <div class="col-md-6 input-group">
+                            <input type="text" class="form-control" id="editdate" name="Date" placeholder="Event Date" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-md-4" for="Description">Event Description</label>
+                        <div class="col-md-6">
+                            <textarea rows="6" class="form-control" id="editdescription" name="Description" placeholder="Event Description"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-6">
+                            <button class="btn btn-custom pull-right" id="createbtn">Create</button>
+                        </div>
+                    </div>
+                </form>
+            </div><!-- End of Modal body -->
+        </div><!-- End of Modal content -->
+    </div><!-- End of Modal dialog -->
+</div><!-- End of Modal -->
+
+<script>
+
+    var $items = [];
+    $(function () {
+
+        $("#createbtn").click(function (e) {
+
+            e.preventDefault();
+            var action = '';
+            var data2 = {};
+            var $sbmt = true;
+            var txt = $('#createbtn').text();
+            if (txt == 'Create') {
+                action = 'http://localhost:61950/Admin/CreateEvent';
+            } else {
+
+                action = 'http://localhost:61950/Admin/UpdateEvent';
+                data2["Id"] = $items[0];
+            }
+
+            $("#eventform").serializeArray().map(function (x) { data2[x.name] = x.value; });
+            $("#eventform").find("input").each(function () {
+                if ($(this).val() == "") { $sbmt = false; }
+            });
+
+            if ($sbmt == false) {
+                if (!$('div').hasClass('alert alert-danger')) {
+                    $('#editheader').after('<div class="alert alert-danger">Warning - Fill out all fields.</div>');
+                }             
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: action,
+                data: JSON.stringify(data2),
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    var $i = 0;
+                    $.each(data, function (index, item) {
+                        $('#editheader').after('<div class="alert alert-danger">' + item + '</div>');
+                        $i++;
+                    });
+
+                    if ($i == 0) {
+                        location.reload();
+                    }
+                },
+                error: function (xhr, thrownError) {
+                    alert("error");
+                }
+            });
+
+        });
+
+        $("#event-table").click(function () {
+            $('#editbtn').prop('disabled', false);
+            $('#deletebtn').prop('disabled', false);
+            $('#closebtn').prop('disabled', false);
+        });
+
+        $("#editbtn").click(function (e) {
+
+            $('.alert.alert-danger').remove();
+            $('#editheader').text('Edit Event');
+            $('#createbtn').text('Update');
+            $('#editname').val($items[1]);
+            $('#editdescription').val($items[2]);
+            $('#editdate').val($items[3]);
+        });
+
+        $("#newbtn").click(function (e) {
+
+            $('.alert.alert-danger').remove();
+            $('#editheader').text('Create Event');
+            $('#createbtn').text('Create');
+            $('#editname').val('');
+            $('#editdescription').val('');
+            $('#editdate').val('');
+        });
+
+        $("#deletebtn").click(function () {
+
+            var event = { Id: $items[0], Name: null, Description: null };
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:61950/Admin/DeleteEvent",
+                data: JSON.stringify(event),
+                contentType: "application/json; charset=utf-8",
+                success: function () {
+                    $("#" + $items[0]).remove();
+                },
+                error: function (xhr, thrownError) {
+                    alert(xhr.status);
+                    alert(thrownError);
+                }
+            });
+        });
+
+        $("#closebtn").click(function () {
+
+            var event = { Id: $items[0], Name: null, Description: null };
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:61950/Admin/CloseEvent",
+                data: JSON.stringify(event),
+                contentType: "application/json; charset=utf-8",
+                success: function () {
+                    $("#" + $items[0]).remove();
+                },
+                error: function (xhr, thrownError) {
+                    alert(xhr.status);
+                    alert(thrownError);
+                }
+            });
+        });
+
+        $('#event-table tr').click(function () {
+
+            $items = [];
+            var $row = $(this).closest("tr"),       // Finds the closest row <tr>
+            $tds = $row.find("td");             // Finds all children <td> elements
+            $.each($tds, function () {               // Visits every single <td> element
+                $items.push($(this).text());        // Prints out the text within the <td>
+            });
+
+            $('#'+$items[0]).addClass('highlight').siblings().removeClass('highlight');
+        });
+        //close
+    });
+
+</script>

@@ -1,0 +1,238 @@
+﻿<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+<link href="@Url.Content("~/Content/Site.css")" rel="stylesheet" type="text/css" />
+@using Web.Models
+@model List<Web.Models.User>
+
+@{
+    ViewBag.Title = "Users";
+}
+
+<h2>Admin Console</h2>
+<h3>Active Users</h3>
+<div class="btn-group col-md-offset-9">
+    <button type="button" class="btn btn-default" id="newbtn" data-toggle="modal" data-target="#edituser">New</button>
+    <button type="button" class="btn btn-default" id="editbtn" data-toggle="modal" data-target="#edituser" disabled>Edit</button>
+    <button type="button" class="btn btn-default" id="shiftbtn" disabled>Change Shift</button>
+</div>
+<hr />
+<table class="table table-hover" id="event-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Event</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Phone Number</th>
+            <th>SysID</th>
+            <th>Admin</th>
+            <th>Shift</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr id="@item.Id">
+                <td>@Html.DisplayFor(modelItem => item.Id)</td>
+                <td>@Html.DisplayFor(modelItem => item.Event)</td>
+                <td>@Html.DisplayFor(modelItem => item.FirstName)</td>
+                <td>@Html.DisplayFor(modelItem => item.LastName)</td>
+                <td>@Html.DisplayFor(modelItem => item.PhoneNumber)</td>
+                <td>@Html.DisplayFor(modelItem => item.UUID)</td>
+                <td>@Html.DisplayFor(modelItem => item.Admin)</td>
+                <td>@Html.DisplayFor(modelItem => item.Shift)</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<div id="edituser" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="editheader">Create User</h4>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" id="userform">
+                    <div class="form-group">
+                        <label class="control-label col-md-4" for="Event">Event ID</label>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="editeventid" name="Event" placeholder="Event ID" required/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-md-4" for="FirstName">First Name</label>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="editfname" name="FirstName" placeholder="First Name" required/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-md-4" for="LastName">Last Name</label>
+                        <div class="col-md-6 input-group">
+                            <input type="text" class="form-control" id="editlname" name="LastName" placeholder="Last Name" required/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-md-4" for="PhoneNumber">Phone Number</label>
+                        <div class="col-md-6 input-group">
+                            <input type="text" class="form-control" id="editphone" name="PhoneNumber" placeholder="Phone Number" required/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-md-4" for="Admin">Admin</label>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        <input type="checkbox" id="editadmin" name="Admin">
+                                    </span>
+                                    <input type="text" class="form-control" disabled="disabled" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-6">
+                            <button class="btn btn-custom pull-right" id="createbtn">Create</button>
+                        </div>
+                    </div>
+                </form>
+            </div><!-- End of Modal body -->
+        </div><!-- End of Modal content -->
+    </div><!-- End of Modal dialog -->
+</div><!-- End of Modal -->
+
+<script>
+
+    var $items = [];
+
+    $(function () {
+
+        $("#createbtn").click(function (e) {
+
+            e.preventDefault();
+            var action = '';
+            var data2 = {};
+            var $sbmt = true;
+            data2["Admin"] = 0;
+            var txt = $('#createbtn').text();
+            var $admin = $('#editadmin').is(':checked');
+            if ($admin) {
+                data2["Admin"] = 1;
+            } 
+
+            if (txt == 'Create') {
+                action = 'http://localhost:61950/Admin/CreateUser';
+            } else {
+
+                action = 'http://localhost:61950/Admin/UpdateUser';
+                data2["Id"] = $items[0];
+            }
+
+            $("#userform").serializeArray().map(function (x) { data2[x.name] = x.value; });
+            $("#userform").find("input").each(function () {
+                if ($(this).val() == "") { $sbmt = false; }
+            });
+
+            if ($sbmt == false) {
+                if (!$('div').hasClass('alert alert-danger')) {
+                    $('#editheader').after('<div class="alert alert-danger">Warning - Fill out all fields.</div>');
+                }
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: action,
+                data: JSON.stringify(data2),
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    var $i = 0;
+                    $.each(data, function (index, item) {
+                        $('#editheader').after('<div class="alert alert-danger">'+item+'</div>');
+                        $i++;
+                    });
+
+                    if ($i == 0) {
+                        location.reload();
+                    }
+                },
+                error: function (xhr, thrownError) {
+                    alert(xhr.status);
+                }
+            });
+        });
+
+        $("#event-table").click(function () {
+            $('#editbtn').prop('disabled', false);
+            $('#shiftbtn').prop('disabled', false);
+        });
+
+        $("#editbtn").click(function (e) {
+
+            $('.alert.alert-danger').remove();
+            $('#editheader').text('Edit User');
+            $('#createbtn').text('Update');
+            $('#editeventid').val($items[1]);
+            $('#editfname').val($items[2]);
+            $('#editlname').val($items[3]);
+            $('#editphone').val($items[4]);
+            if ($items[6] == 1) {
+                $('#editadmin').prop('checked', true);
+            }
+            else {
+                $('#editadmin').prop('checked', false);
+            }
+        });
+
+        $("#newbtn").click(function (e) {
+
+            $('.alert.alert-danger').remove();
+            $('#editheader').text('Create User');
+            $('#createbtn').text('Create');
+            $('#editeventid').val('');
+            $('#editfname').val('');
+            $('#editlname').val('');
+            $('#editdate').val('');
+            $('#editphone').val('');
+            $('#editadmin').prop('checked', false);
+        });
+
+        $("#shiftbtn").click(function () {
+
+            if ($items[7] == 'on') {
+                $items[7] = 'off';
+            } else {
+                $items[7] = 'on';
+            }
+            var event = { Id: $items[0], Shift: $items[7]};
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:61950/Admin/UpdateUserShift",
+                data: JSON.stringify(event),
+                contentType: "application/json; charset=utf-8",
+                success: function () {
+                    $('td:nth-child(8)', '#'+$items[0]).html($items[7]);
+                },
+                error: function (xhr, thrownError) {
+                    alert(xhr.status);
+                    alert(thrownError);
+                }
+            });
+        });
+
+        $('#event-table tr').click(function () {
+
+            $items = [];
+            var $row = $(this).closest("tr"),       // Finds the closest row <tr>
+            $tds = $row.find("td");             // Finds all children <td> elements
+            $.each($tds, function () {               // Visits every single <td> element
+                $items.push($(this).text());        // Prints out the text within the <td>
+            });
+
+            $('#' + $items[0]).addClass('highlight').siblings().removeClass('highlight');
+        });
+
+        //close
+    });
+
+</script>

@@ -1,0 +1,66 @@
+﻿<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+<link href="@Url.Content("~/Content/Site.css")" rel="stylesheet" type="text/css" />
+@using Web.Models
+@model List<Web.Models.Message>
+
+@{
+    ViewBag.Title = "Models";
+}
+
+<h2>Admin Console</h2>
+<h3>Messages</h3>
+<hr/>
+<table class="table table-hover" id="event-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Event</th>
+            <th>SysID</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Group</th>
+            <th>Message</th>
+            <th>SentAt</th>
+            <th>ReceivedAt</th>
+            <th>PhoneFrom</th>
+            <th>PhoneTo</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr id="@item.Id">
+                <td>@Html.DisplayFor(modelItem => item.Id)</td>
+                <td>@Html.DisplayFor(modelItem => item.Event)</td>
+                <td>@Html.DisplayFor(modelItem => item.Cube)</td>
+                <td>@Html.DisplayFor(modelItem => item.MessageFrom)</td>
+                <td>@Html.DisplayFor(modelItem => item.MessageTo)</td>
+                <td>@Html.DisplayFor(modelItem => item.Group)</td>
+                <td>@Html.DisplayFor(modelItem => item.MessageContent)</td>
+                <td>@Html.DisplayFor(modelItem => item.SentAt)</td>
+                <td>@Html.DisplayFor(modelItem => item.ReceivedAt)</td>
+                <td>@Html.DisplayFor(modelItem => item.PhoneFrom)</td>
+                <td>@Html.DisplayFor(modelItem => item.PhoneTo)</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script>
+    var $items = [];
+    $(function () {
+
+        $('#event-table tr').click(function () {
+
+            $items = [];
+            var $row = $(this).closest("tr"),       // Finds the closest row <tr>
+            $tds = $row.find("td");             // Finds all children <td> elements
+            $.each($tds, function () {               // Visits every single <td> element
+                $items.push($(this).text());        // Prints out the text within the <td>
+            });
+
+            $('#'+$items[0]).addClass('highlight').siblings().removeClass('highlight');
+        });
+        //close
+    });
+</script>

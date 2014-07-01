@@ -1,0 +1,161 @@
+﻿<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+<link href="@Url.Content("~/Content/Site.css")" rel="stylesheet" type="text/css" />
+@using Web.Models
+@model List<Web.Models.Group>
+
+@{
+    ViewBag.Title = "Groups";
+}
+
+<h2>Admin Console</h2>
+<h3>Active Groups</h3>
+<div class="btn-group col-md-offset-9">
+    <button type="button" class="btn btn-default" id="newbtn" data-toggle="modal" data-target="#editgroup">New</button>
+    <button type="button" class="btn btn-default" id="editbtn" data-toggle="modal" data-target="#editgroup" disabled>Edit</button>
+</div>
+<hr />
+<table class="table table-hover" id="event-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Event</th>
+            <th>Name</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr id="@item.Id">
+                <td>@Html.DisplayFor(modelItem => item.Id)</td>
+                <td>@Html.DisplayFor(modelItem => item.Event)</td>
+                <td>@Html.DisplayFor(modelItem => item.Name)</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div id="editgroup" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="editheader">Create Group</h4>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" id="groupform">
+                    <div class="form-group">
+                        <label class="control-label col-md-4" for="Name">Group Name</label>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="editname" name="Name" placeholder="Group Name" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-md-4" for="Event">Event ID</label>
+                        <div class="col-md-6 input-group">
+                            <input type="text" class="form-control" id="editevent" name="Event" placeholder="Event ID" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-6">
+                            <button class="btn btn-custom pull-right" id="createbtn">Create</button>
+                        </div>
+                    </div>
+                </form>
+            </div><!-- End of Modal body -->
+        </div><!-- End of Modal content -->
+    </div><!-- End of Modal dialog -->
+</div><!-- End of Modal -->
+
+<script>
+
+    var $items = [];
+    $(function () {
+
+        $("#createbtn").click(function (e) {
+
+            e.preventDefault();
+            var action = '';
+            var data2 = {};
+            var $sbmt = true;
+            var txt = $('#createbtn').text();
+            if (txt == 'Create') {
+                action = 'http://localhost:61950/Admin/CreateGroup';
+            } else {
+
+                action = 'http://localhost:61950/Admin/UpdateGroup';
+                data2["Id"] = $items[0];
+            }
+
+            $("#groupform").serializeArray().map(function (x) { data2[x.name] = x.value; });
+            $("#groupform").find("input").each(function () {
+                if ($(this).val() == "") { $sbmt = false; }
+            });
+
+            if ($sbmt == false) {
+                if (!$('div').hasClass('alert alert-danger')) {
+                    $('#editheader').after('<div class="alert alert-danger">Warning - Fill out all fields.</div>');
+                }
+                return;
+            }
+            $.ajax({
+                type: "POST",
+                url: action,
+                data: JSON.stringify(data2),
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    var $i = 0;
+                    $.each(data, function (index, item) {
+                        $('#editheader').after('<div class="alert alert-danger">' + item + '</div>');
+                        $i++;
+                    });
+
+                    if ($i == 0) {
+                        location.reload();
+                    }
+                },
+                error: function (xhr, thrownError) {
+                    alert("error");
+                }
+            });
+
+        });
+
+        $("#event-table").click(function () {
+            $('#editbtn').prop('disabled', false);
+        });
+
+        $("#editbtn").click(function (e) {
+
+            $('.alert.alert-danger').remove();
+            $('#editheader').text('Edit Group');
+            $('#createbtn').text('Update');
+            $('#editevent').val($items[1]);
+            $('#editname').val($items[2]);
+        });
+
+        $("#newbtn").click(function (e) {
+
+            $('.alert.alert-danger').remove();
+            $('#editheader').text('Create Group');
+            $('#createbtn').text('Create');
+            $('#editname').val('');
+            $('#editevent').val('');
+        });
+
+
+        $('#event-table tr').click(function () {
+
+            $items = [];
+            var $row = $(this).closest("tr"),       // Finds the closest row <tr>
+            $tds = $row.find("td");             // Finds all children <td> elements
+            $.each($tds, function () {               // Visits every single <td> element
+                $items.push($(this).text());        // Prints out the text within the <td>
+            });
+
+            $('#' + $items[0]).addClass('highlight').siblings().removeClass('highlight');
+        });
+
+        //close
+    });
+
+</script>
